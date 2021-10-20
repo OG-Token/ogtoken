@@ -1,3 +1,5 @@
+
+
 // SPDX-License-Identifier: Unlicensed
 
 /**
@@ -15,7 +17,7 @@
 	No buyback.
 	Telegram:	https://t.me/THE_OG_TOKEN
 	Web:		https://ogtoken.xyz
-	Twitter:	https://twitter.com/token_og
+	Twitter:	
 */
 
 pragma solidity ^0.8.3;
@@ -794,7 +796,7 @@ contract OGTOKEN is Context, IERC20, Ownable {
     mapping (address => bool) private _isExcluded;
     address[] private _excluded;
 
-    address private _OGHoodWalletAddress = 0xbB6c7F34C70aBD76869A583D8508F6264067E730;
+    address private _hoodWalletAddress = 0xe5156295DFEEf0219dA6a2c024951C5FdF1B66A3;
    
     uint256 private constant MAX = ~uint256(0);
     uint256 private _tTotal = 100000000000 * 10**6 * 10**9;
@@ -808,8 +810,8 @@ contract OGTOKEN is Context, IERC20, Ownable {
     uint256 public _taxFee = 2;
     uint256 private _previousTaxFee = _taxFee;
     
-    uint256 public _OGHoodFee = 2;
-    uint256 private _previousOGHoodFee = _OGHoodFee;
+    uint256 public _hoodFee = 2;
+    uint256 private _previousHoodFee = _hoodFee;
     uint256 public _liquidityFee = 2;
     uint256 private _previousLiquidityFee = _liquidityFee;
 
@@ -851,6 +853,9 @@ contract OGTOKEN is Context, IERC20, Ownable {
         
         //Test Net
         //IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1);
+        
+        //Test Net
+        //IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3);
         
         //Mian Net
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
@@ -976,13 +981,13 @@ contract OGTOKEN is Context, IERC20, Ownable {
         }
     }
         function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tOGHood) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tHood) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
         _takeLiquidity(tLiquidity);
-        _takeOGHood(tOGHood);
+        _takeHood(tHood);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -999,8 +1004,8 @@ contract OGTOKEN is Context, IERC20, Ownable {
         _taxFee = taxFee;
     }
 
-    function setOGHoodFeePercent(uint256 OGHoodFee) external onlyOwner() {
-        _OGHoodFee = OGHoodFee;
+    function setHoodFeePercent(uint256 hoodFee) external onlyOwner() {
+        _hoodFee = hoodFee;
     }
     
     function setLiquidityFeePercent(uint256 liquidityFee) external onlyOwner() {
@@ -1027,25 +1032,25 @@ contract OGTOKEN is Context, IERC20, Ownable {
     }
 
     function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
-        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tOGHood) = _getTValues(tAmount);
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, tOGHood, _getRate());
-        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tLiquidity, tOGHood);
+        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tHood) = _getTValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, tHood, _getRate());
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tLiquidity, tHood);
     }
 
     function _getTValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256) {
         uint256 tFee = calculateTaxFee(tAmount);
         uint256 tLiquidity = calculateLiquidityFee(tAmount);
-        uint256 tOGHood = calculateOGHoodFee(tAmount);
-        uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity).sub(tOGHood);
-        return (tTransferAmount, tFee, tLiquidity, tOGHood);
+        uint256 tHood = calculateHoodFee(tAmount);
+        uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity).sub(tHood);
+        return (tTransferAmount, tFee, tLiquidity, tHood);
     }
 
-    function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 tOGHood, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
+    function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 tHood, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
         uint256 rAmount = tAmount.mul(currentRate);
         uint256 rFee = tFee.mul(currentRate);
         uint256 rLiquidity = tLiquidity.mul(currentRate);
-        uint256 rOGHood = tOGHood.mul(currentRate);
-        uint256 rTransferAmount = rAmount.sub(rFee).sub(rLiquidity).sub(rOGHood);
+        uint256 rHood = tHood.mul(currentRate);
+        uint256 rTransferAmount = rAmount.sub(rFee).sub(rLiquidity).sub(rHood);
         return (rAmount, rTransferAmount, rFee);
     }
 
@@ -1074,12 +1079,12 @@ contract OGTOKEN is Context, IERC20, Ownable {
             _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
     }
     
-    function _takeOGHood(uint256 tOGHood) private {
+    function _takeHood(uint256 tHood) private {
         uint256 currentRate =  _getRate();
-        uint256 rOGHood = tOGHood.mul(currentRate);
-        _rOwned[_OGHoodWalletAddress] = _rOwned[_OGHoodWalletAddress].add(rOGHood);
-        if(_isExcluded[_OGHoodWalletAddress])
-            _tOwned[_OGHoodWalletAddress] = _tOwned[_OGHoodWalletAddress].add(tOGHood);
+        uint256 rHood = tHood.mul(currentRate);
+        _rOwned[_hoodWalletAddress] = _rOwned[_hoodWalletAddress].add(rHood);
+        if(_isExcluded[_hoodWalletAddress])
+            _tOwned[_hoodWalletAddress] = _tOwned[_hoodWalletAddress].add(tHood);
     }
     
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
@@ -1088,8 +1093,8 @@ contract OGTOKEN is Context, IERC20, Ownable {
         );
     }
 
-    function calculateOGHoodFee(uint256 _amount) private view returns (uint256) {
-        return _amount.mul(_OGHoodFee).div(
+    function calculateHoodFee(uint256 _amount) private view returns (uint256) {
+        return _amount.mul(_hoodFee).div(
             10**2
         );
     }
@@ -1104,17 +1109,17 @@ contract OGTOKEN is Context, IERC20, Ownable {
         if(_taxFee == 0 && _liquidityFee == 0) return;
         
         _previousTaxFee = _taxFee;
-        _previousOGHoodFee = _OGHoodFee;
+        _previousHoodFee = _hoodFee;
         _previousLiquidityFee = _liquidityFee;
         
         _taxFee = 0;
-        _OGHoodFee = 0;
+        _hoodFee = 0;
         _liquidityFee = 0;
     }
     
     function restoreAllFee() private {
         _taxFee = _previousTaxFee;
-        _OGHoodFee = _previousOGHoodFee;
+        _hoodFee = _previousHoodFee;
         _liquidityFee = _previousLiquidityFee;
     }
     
@@ -1255,33 +1260,33 @@ contract OGTOKEN is Context, IERC20, Ownable {
     }
 
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tOGHood) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tHood) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeLiquidity(tLiquidity);
-        _takeOGHood(tOGHood);
+        _takeHood(tHood);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tOGHood) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tHood) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
         _takeLiquidity(tLiquidity);
-        _takeOGHood(tOGHood);
+        _takeHood(tHood);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tOGHood) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tHood) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
         _takeLiquidity(tLiquidity);
-        _takeOGHood(tOGHood);
+        _takeHood(tHood);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
