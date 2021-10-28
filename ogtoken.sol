@@ -4,8 +4,8 @@
 
 /**
     
-   2% OF TRANSACTION FEE WILL GO TO HOLDERS
-   2% WILL GO TO OGHood
+   3% OF TRANSACTION FEE WILL GO TO HOLDERS
+   1% WILL GO TO OGHood
    2% WILL GO TO lIQUIDITY POOL
    
    It's time. Become an OG. Join the journey to a successful OG.
